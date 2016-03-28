@@ -37,14 +37,15 @@ private:
   double kStepsPerRevolution;
   int kMicroStepping;
 
-  volatile long currentStepcount;
-  volatile long targetStepcount;
 
   volatile bool direction;
  
-  long getStepsForMM(double mm);
+  
  
 public:
+  volatile long currentStepcount;
+  volatile long targetStepcount;
+
   volatile long delta;
   volatile long counter;
   double targetPosition;
@@ -69,6 +70,8 @@ public:
   void resetStepper();
   
   void doStep(long intervals);
+  long getStepsForMM(double mm);
+  double getMMForSteps(long steps);
 };
 
 #endif

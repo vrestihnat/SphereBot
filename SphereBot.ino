@@ -55,7 +55,7 @@
 #define DEFAULT_PEN_UP_POSITION 50
 #define XAXIS_MIN_STEPCOUNT -467
 #define XAXIS_MAX_STEPCOUNT 467
-#define DEFAULT_ZOOM_FACTOR 1. // With a Zoom-Faktor of .65, I can print gcode for Makerbot Unicorn without changes. 
+#define DEFAULT_ZOOM_FACTOR 1.012 // With a Zoom-Faktor of .65, I can print gcode for Makerbot Unicorn without changes. 
                                // The zoom factor can be also manipulated by the propretiary code M402
 
 
@@ -65,6 +65,15 @@ StepperModel rotationStepper(XAXIS_DIR_PIN, XAXIS_STEP_PIN, XAXIS_ENABLE_PIN, XA
         XAXIS_MIN_STEPCOUNT, XAXIS_MAX_STEPCOUNT, 200.0, 16);
 StepperModel xAxisStepper(YAXIS_DIR_PIN, YAXIS_STEP_PIN, YAXIS_ENABLE_PIN, YAXIS_ENDSTOP_PIN,
         0, 0, 200.0, 16);
+
+/*        
+StepperModel xAxisStepper(XAXIS_DIR_PIN, XAXIS_STEP_PIN, XAXIS_ENABLE_PIN, XAXIS_ENDSTOP_PIN,
+        XAXIS_MIN_STEPCOUNT, XAXIS_MAX_STEPCOUNT, 200.0, 16);
+StepperModel rotationStepper(YAXIS_DIR_PIN, YAXIS_STEP_PIN, YAXIS_ENABLE_PIN, YAXIS_ENDSTOP_PIN,
+        0, 0, 200.0, 16);
+*/
+
+        
 
 SoftwareServo servo;
 boolean servoEnabled=true;
@@ -86,10 +95,10 @@ boolean comment_mode = false;
 double currentOffsetX = 0.;
 double currentOffsetY = 0.;
 boolean absoluteMode = true;
-double feedrate = 1000.; // mm/minute
+double feedrate = 2500.; 
 double zoom = DEFAULT_ZOOM_FACTOR;
 
-const double maxFeedrate = 2000.;
+const double maxFeedrate = 5000.;
 // ------
 
 void setup()
@@ -215,7 +224,7 @@ void get_command() // gets commands from serial connection and then calls up sub
   {
     serial_char = Serial.read(); // read individual byte from serial connection
     
-    if (serial_char == '\n' || serial_char == '\r' || serial_char == '~') // end of a command character
+    if (serial_char == 13 || serial_char == 10 || serial_char == 244 || serial_char == '\n' || serial_char == '\r' || serial_char == '~') // end of a command character
     { 
       buffer[serial_count]=0;
       process_commands(buffer, serial_count);
@@ -310,13 +319,13 @@ void process_commands(char command[], int command_length) // deals with standard
     switch(codenum)
     {
       case 0: // G0, Rapid positioning
-        xAxisStepper.setTargetPosition(tempX/20);
-        rotationStepper.setTargetPosition(tempY/20);
+        xAxisStepper.setTargetPosition(tempX);
+        rotationStepper.setTargetPosition(tempY);
         commitSteppers(maxFeedrate);
         break;
       case 1: // G1, linear interpolation at specified speed
-        xAxisStepper.setTargetPosition(tempX/20);
-        rotationStepper.setTargetPosition(tempY/20);
+        xAxisStepper.setTargetPosition(tempX);
+        rotationStepper.setTargetPosition(tempY);
         commitSteppers(feedrate);
         break;
       case 2: // G2, Clockwise arc
@@ -364,6 +373,8 @@ void process_commands(char command[], int command_length) // deals with standard
         break;
 
       case 300: // Servo Position
+        uint8_t prev_servo_value;
+        
         if(getValue('S', command, &value))
         {
           servoEnabled=true;
@@ -380,7 +391,22 @@ void process_commands(char command[], int command_length) // deals with standard
             }           
             servoEnabled=false;
           }
-          servo.write((int)value);
+            prev_servo_value = servo.read();
+            if ((value - prev_servo_value) > 0) {
+                //split the movement range in 5 intervals with 20ms delay between them
+                while (servo.read() < value) {
+                    servo.write(servo.read() + (value - prev_servo_value)/10);
+                    SoftwareServo::refresh();
+                    delay(50);
+                }
+            } else {
+                while (servo.read() > value) {
+                    servo.write(servo.read() - (prev_servo_value - value)/5);
+                    SoftwareServo::refresh();
+                    delay(40);
+                }
+
+            }
         }
         break;
         

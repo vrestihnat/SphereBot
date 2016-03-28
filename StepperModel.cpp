@@ -49,7 +49,9 @@ StepperModel::StepperModel(int inDirPin, int inStepPin, int inEnablePin, int inE
   currentStepcount=0;
   targetStepcount=0;
 
-  steps_per_mm = (int)((kStepsPerRevolution/(45.*M_PI))*kMicroStepping+0.5); // default value for a "normal" egg (45 mm diameter)
+  //steps_per_mm = (int)((kStepsPerRevolution/(45.*M_PI))*kMicroStepping+0.5); // default value for a "normal" egg (45 mm diameter)
+  steps_per_mm = 1600/451.55;
+  //steps_per_mm = (int)kStepsPerRevolution/200;
   enableStepper(false);
 }
 
@@ -78,6 +80,18 @@ long StepperModel::getStepsForMM(double mm)
 //  Serial.println(steps);
   
   return steps;
+}
+
+double StepperModel::getMMForSteps(long steps)
+{
+  double mm = (double)(steps/steps_per_mm);
+  
+//  Serial.print("mm for ");
+//  Serial.print(steps);
+//  Serial.print(" steps: ");
+//  Serial.println(mm);
+  
+  return mm;
 }
 
 /* Currently unused */
