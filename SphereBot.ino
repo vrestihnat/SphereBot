@@ -55,7 +55,8 @@
 #define DEFAULT_PEN_UP_POSITION 50
 #define XAXIS_MIN_STEPCOUNT -467
 #define XAXIS_MAX_STEPCOUNT 467
-#define DEFAULT_ZOOM_FACTOR 1.012 // With a Zoom-Faktor of .65, I can print gcode for Makerbot Unicorn without changes. 
+#define DEFAULT_ZOOM_FACTOR 1.01
+//#define DEFAULT_ZOOM_FACTOR 1.018 // With a Zoom-Faktor of .65, I can print gcode for Makerbot Unicorn without changes. 
                                // The zoom factor can be also manipulated by the propretiary code M402
 
 
@@ -179,7 +180,7 @@ void commitSteppers(double speedrate)
 		  	  
   // compute number of intervals for this move
   double sub1 = (60000.* distance / speedrate);
-  double sub2 = sub1 * 1000.;
+  double sub2 = sub1 * 100.;
   intervals = (long)sub2/TIMER_DELAY;
 
   intervals_remaining = intervals;
