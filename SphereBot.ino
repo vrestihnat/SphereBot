@@ -27,6 +27,7 @@
 #include <TimerOne.h>
 #include <SoftwareServo.h>
 #include "StepperModel.h"
+#include <RBD_Servo.h>
 
 
 #define TIMER_DELAY 64
@@ -52,7 +53,7 @@
  * Other Configuration
  */
 
-#define DEFAULT_PEN_UP_POSITION 50
+#define DEFAULT_PEN_UP_POSITION 30
 #define XAXIS_MIN_STEPCOUNT -467
 #define XAXIS_MAX_STEPCOUNT 467
 #define DEFAULT_ZOOM_FACTOR 1.01
@@ -76,7 +77,8 @@ StepperModel rotationStepper(YAXIS_DIR_PIN, YAXIS_STEP_PIN, YAXIS_ENABLE_PIN, YA
 
         
 
-SoftwareServo servo;
+//SoftwareServo servo;
+RBD::Servo servo(SERVO_PIN, 1000, 2000);
 boolean servoEnabled=true;
 
 long intervals=0;
@@ -108,18 +110,23 @@ void setup()
 
     clear_buffer();
     Serial.println("Start:");
-    servo.attach(SERVO_PIN);
+    servo.setDegreesOfRotation(125);
+    servo.setPulseInterval(50);
+    //servo.attach(SERVO_PIN);
     //servo.setMinimumPulse(400);
     //servo.setMaximumPulse(1700);
-    servo.write(DEFAULT_PEN_UP_POSITION);
+    //servo.write(DEFAULT_PEN_UP_POSITION);
+    servo.moveToDegrees(DEFAULT_PEN_UP_POSITION);
     
     if(servoEnabled)
     {
-      for(int i=0;i<100;i++)
+      servo.update();
+      /*for(int i=0;i<100;i++)
       {
-          SoftwareServo::refresh();
+          //SoftwareServo::refresh();
+          //servo.update();
           delay(4);
-      }
+      }*/
     }
     
     //--- Activate the PWM timer
@@ -139,7 +146,8 @@ void loop() // input loop, looks for manual input and then checks to see if and 
 {
   get_command(); // check for Gcodes
   if(servoEnabled)
-    SoftwareServo::refresh();
+    servo.update();
+    //SoftwareServo::refresh();
 }
 
 //--- Interrupt-Routine: Move the steppers
@@ -350,7 +358,8 @@ void process_commands(char command[], int command_length) // deals with standard
            {
               delay(1);
               if(servoEnabled)
-                SoftwareServo::refresh();
+                servo.update();
+                 //SoftwareServo::refresh();
            }
         }
         break;
@@ -384,15 +393,20 @@ void process_commands(char command[], int command_length) // deals with standard
           else if(value>180.)
           {
             value=DEFAULT_PEN_UP_POSITION;
-            servo.write((int)value);
+            //servo.write((int)value);
+            servo.moveToDegrees((int)value);
             for(int i=0;i<100;i++)
             {
-                SoftwareServo::refresh();
+                servo.update();
+                //SoftwareServo::refresh();
                 delay(4);
             }           
             servoEnabled=false;
           }
-            prev_servo_value = servo.read();
+      
+           servo.moveToDegrees((int)value);
+           servo.update();
+            /*prev_servo_value = servo.read();
             if ((value - prev_servo_value) > 0) {
                 //split the movement range in 5 intervals with 20ms delay between them
                 while (servo.read() < value) {
@@ -407,7 +421,8 @@ void process_commands(char command[], int command_length) // deals with standard
                     delay(40);
                 }
 
-            }
+            }*/
+            
         }
         break;
         
@@ -529,7 +544,8 @@ void drawArc(double centerX, double centerY, double endpointX, double endpointY,
     {
       delay(1);
       if(servoEnabled)
-        SoftwareServo::refresh();
+        servo.update();
+        //SoftwareServo::refresh();
     };
   }
 }
